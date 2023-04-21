@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 
 	"name": "Aloud",
-	"description": "Reads text aloud",
+	"description": "Aloud is a Chrome Browser Extension that makes use of Google Chrome's Text-to-Speech technology to read text out loud.",
 	"version": "1.0.0",
 
 	"action": {
