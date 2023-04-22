@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import './assets/css/App.css'
 import Header from './components/Header'
 import Control from './components/Control'
@@ -8,47 +8,76 @@ export default function App() {
 	const [voices, setVoices] = useState([]);
 	const [speaking, setSpeaking] = useState(false);
 
-	const isSpeaking = async () => {
-		const chromeSpeaking = await chrome.tts.isSpeaking();
-		setSpeaking(chromeSpeaking);
-	}
+	const getVoices = useCallback(async () => {
+		try {
+			const chromeVoices = await chrome.tts.getVoices();
+			setVoices(chromeVoices);
+		} catch (error) {
+			console.error(error);
+		}
+	}, []);
 
-	const getVoices = async () => {
-		const chromeVoices = await chrome.tts.getVoices();
-		setVoices(chromeVoices);
-	}
+	const handleSpeak = useCallback(async (text, voice, rate) => {
+		try {
+			await chrome.tts.speak(text, {
+				voiceName: voice,
+				rate: parseFloat(rate),
+				onEvent: function (event) {
+					if (event.type === 'end') {
+						setSpeaking(false);
+					}
+				}
+			});
+			setSpeaking(true);
+		} catch (error) {
+			console.error(error);
+		}
+	}, []);
+
+	const handlePause = useCallback(async () => {
+		try {
+			await chrome.tts.pause();
+			setSpeaking(false);
+		} catch (error) {
+			console.error(error);
+		}
+	}, []);
+
+	const handleResume = useCallback(async () => {
+		try {
+			await chrome.tts.resume();
+			setSpeaking(true);
+		} catch (error) {
+			console.error(error);
+		}
+	}, []);
+
+	const handleStop = useCallback(async () => {
+		try {
+			await chrome.tts.stop();
+			setSpeaking(false);
+		} catch (error) {
+			console.error(error);
+		}
+	}, []);
 
 	useEffect(() => {
 		getVoices();
-	}, [])
+	}, [getVoices]);
 
-	const handleSpeak = async (text, voice, rate) => {
-		await chrome.tts.speak(text, {
-			voiceName: voice,
-			rate: parseFloat(rate),
-			onEvent: function (event) {
-				if (event.type === 'end') {
-					isSpeaking();
-				}
+	useEffect(() => {
+		const isSpeaking = async () => {
+			try {
+				const chromeSpeaking = await chrome.tts.isSpeaking();
+				setSpeaking(chromeSpeaking);
+			} catch (error) {
+				console.error(error);
 			}
-		});
+		}
 		isSpeaking();
-	}
-
-	const handlePause = async () => {
-		await chrome.tts.pause();
-		isSpeaking();
-	}
-
-	const handleResume = async () => {
-		await chrome.tts.resume();
-		isSpeaking();
-	}
-
-	const handleStop = async () => {
-		await chrome.tts.stop();
-		isSpeaking();
-	}
+		const interval = setInterval(isSpeaking, 1000);
+		return () => clearInterval(interval);
+	}, []);
 
 	return (
 		<div className="App">
