@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { Box } from '@mui/material'
 import './assets/css/App.css'
 import Header from './components/Header'
 import Control from './components/Control'
@@ -7,6 +8,15 @@ export default function App() {
 	/* eslint-disable no-undef */
 	const [voices, setVoices] = useState([]);
 	const [speaking, setSpeaking] = useState(false);
+
+	const isSpeaking = async () => {
+		try {
+			const chromeSpeaking = await chrome.tts.isSpeaking();
+			setSpeaking(chromeSpeaking);
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
 	const getVoices = useCallback(async () => {
 		try {
@@ -24,11 +34,11 @@ export default function App() {
 				rate: parseFloat(rate),
 				onEvent: function (event) {
 					if (event.type === 'end') {
-						setSpeaking(false);
+						isSpeaking();
 					}
 				}
 			});
-			setSpeaking(true);
+			isSpeaking();
 		} catch (error) {
 			console.error(error);
 		}
@@ -37,7 +47,7 @@ export default function App() {
 	const handlePause = useCallback(async () => {
 		try {
 			await chrome.tts.pause();
-			setSpeaking(false);
+			isSpeaking();
 		} catch (error) {
 			console.error(error);
 		}
@@ -46,7 +56,7 @@ export default function App() {
 	const handleResume = useCallback(async () => {
 		try {
 			await chrome.tts.resume();
-			setSpeaking(true);
+			isSpeaking();
 		} catch (error) {
 			console.error(error);
 		}
@@ -55,7 +65,7 @@ export default function App() {
 	const handleStop = useCallback(async () => {
 		try {
 			await chrome.tts.stop();
-			setSpeaking(false);
+			isSpeaking();
 		} catch (error) {
 			console.error(error);
 		}
@@ -65,24 +75,27 @@ export default function App() {
 		getVoices();
 	}, [getVoices]);
 
-	useEffect(() => {
-		const isSpeaking = async () => {
-			try {
-				const chromeSpeaking = await chrome.tts.isSpeaking();
-				setSpeaking(chromeSpeaking);
-			} catch (error) {
-				console.error(error);
+	return (
+		<Box sx={
+			{
+				display: 'flex',
+				flexDirection: 'column',
+				height: '424px',
+				width: '500px',
+				p: 2,
+				gap: 2,
 			}
 		}
-		isSpeaking();
-		const interval = setInterval(isSpeaking, 1000);
-		return () => clearInterval(interval);
-	}, []);
-
-	return (
-		<div className="App">
+		>
 			<Header />
-			<Control voices={voices} speaking={speaking} onSpeak={handleSpeak} onPause={handlePause} onResume={handleResume} onStop={handleStop} />
-		</div>
+			<Control
+				voices={voices}
+				speaking={speaking}
+				onSpeak={handleSpeak}
+				onPause={handlePause}
+				onResume={handleResume}
+				onStop={handleStop}
+			/>
+		</Box>
 	)
 }
